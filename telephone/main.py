@@ -5,14 +5,18 @@ import torch
 
 
 class Telephonemizer:
-    def __init__(self):
-        self.model = AutoModelForCTC.from_pretrained("facebook/wav2vec2-xlsr-53-espeak-cv-ft")
-        self.processor = AutoProcessor.from_pretrained("facebook/wav2vec2-xlsr-53-espeak-cv-ft")
+    def __init__(self, load_audio_model=True):
+        self.load_audio_model = load_audio_model
+        if load_audio_model:
+            self.model = AutoModelForCTC.from_pretrained("facebook/wav2vec2-xlsr-53-espeak-cv-ft")
+            self.processor = AutoProcessor.from_pretrained("facebook/wav2vec2-xlsr-53-espeak-cv-ft")
         self.separator = Separator(phone="", word="", syllable="")
         self.backend = EspeakBackend(language="en-us",
                                      language_switch="remove-flags", )
 
     def convert_voice(self, audio_array):
+        if not self.load_audio_model:
+            assert ("should set load_audio_model to True when init")
         input_values = self.processor(audio_array, return_tensors="pt").input_values
         with torch.no_grad():
             logits = self.model(input_values).logits
