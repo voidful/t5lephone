@@ -68,6 +68,8 @@ def main(arg=None):
             ind = 0
             mask_lengths = []
             while True:
+                if ind >= len(input_sent):
+                    break
                 word = input_sent[ind]
                 prob = random.random()
                 if prob <= input_arg['mask_prob'] and len(word) > 0:
@@ -87,8 +89,9 @@ def main(arg=None):
                 target_sent = target_sent.replace(p, w).replace(MASKTOK_PHONE, MASKTOK)
             examples['input_sent'] = input_sent
             examples['target_sent'] = target_sent
-            examples['mask_length'] = np.mean(mask_lengths) if len(mask_lengths) > 0 else 0
-            examples['mask_ratio'] = np.sum(mask_lengths) / len(origin_sent)
+            examples['mask_length'] = np.mean(mask_lengths) if len(mask_lengths) > 0 else 0.0
+            examples['mask_ratio'] = ((np.sum(mask_lengths) if len(mask_lengths) > 0 else 0) / len(origin_sent)) if len(
+                origin_sent) else 0
         except:
             pass
         return examples
