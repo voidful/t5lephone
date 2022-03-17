@@ -14,7 +14,7 @@ def parse_args(args):
     parser.add_argument("--data", type=str, required=True, help="train data")
     parser.add_argument("--mask_tok", type=str, required=True, help="train data")
     parser.add_argument("--output_name", type=str, default="bart_pretrain_data")
-    parser.add_argument("--mask_prob", default=0.06, type=float, help="mask lm probability")
+    parser.add_argument("--total_mask_prob", default=0.15, type=float, help="mask lm probability")
     parser.add_argument("--worker", default=10, type=int, help="multi processing worker")
     parser.add_argument("--poisson_lam", default=3, type=int, help="poisson lambda")
     input_arg, others_arg = parser.parse_known_args(args)
@@ -44,7 +44,7 @@ def main(arg=None):
         ind = 0
         while True:
             prob = random.random()
-            if prob <= input_arg['mask_prob']:
+            if prob <= input_arg['total_mask_prob']:
                 length = np.random.poisson(lam=input_arg['poisson_lam'])
                 ind += length + 1
                 mask_length.append(length)
@@ -72,7 +72,7 @@ def main(arg=None):
                     break
                 word = input_sent[ind]
                 prob = random.random()
-                if prob <= input_arg['mask_prob'] and len(word) > 0:
+                if prob <= input_arg['total_mask_prob'] and len(word) > 0:
                     length = np.random.poisson(lam=input_arg['poisson_lam'])
                     mask_lengths.append(length)
                     if length == 0:

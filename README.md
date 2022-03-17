@@ -27,11 +27,11 @@ backend.phonemize(["your text here"], separator=separator)
 bart
 
 ```shell
-python data_preprocessing_bart.py --data ./example/example.txt --mask_tok "<extra_id_0>" --poisson_lam 20 --mask_prob 0.01  --output_name ./example/example_out_bart.csv
+python data_preprocessing_bart.py --data ./example/example.txt --mask_tok "<extra_id_0>" --poisson_lam 20 --total_mask_prob 0.01  --output_name ./example/example_out_bart.csv
 ```
 
 t5
 
 ```shell
-python data_preprocessing_t5.py --data ./example/example.txt --poisson_lam 20 --mask_prob 0.15  --output_name ./example/example_out_t5.csv
+python data_preprocessing_t5.py --data ./example/example.txt --poisson_lam 20 --total_mask_prob 0.15  --output_name ./example/example_out_t5.csv
 ```
