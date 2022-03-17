@@ -15,7 +15,15 @@ telephonemizer.convert_voice(ds[0]["audio"]["array"])
 ```
 
 ## preprocess
-
+### from text
+```python
+from phonemizer.backend import EspeakBackend
+from phonemizer.separator import Separator
+separator = Separator(phone=" ", word="", syllable="")
+backend = EspeakBackend(language="en-us",language_switch="remove-flags", )
+backend.phonemize(["your text here"], separator=separator)
+```
+### from phone
 bart
 
 ```shell
