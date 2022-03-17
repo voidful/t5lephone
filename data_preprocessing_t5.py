@@ -67,6 +67,7 @@ def main(arg=None):
         input_sent = list(input_sent)
         len_input_sent = len(input_sent)
         total_masked_spans = int(len_input_sent*input_arg['total_mask_prob']/20+0.5)
+        
         #print(input_sent[:10],len_input_sent,len_input_sent*input_arg['total_mask_prob'],input_arg['total_mask_prob'], total_masked_spans)
         mask_candidates = list(range(len_input_sent-30))
         
@@ -87,7 +88,7 @@ def main(arg=None):
         for ind in which_idx_to_mask:
             length = np.random.poisson(lam=input_arg['poisson_lam']) +1
             mask_lengths.append(length)
-            mask_tok = f"<extra_id_{total_masked_spans-len(mask_lengths)+1}>"
+            mask_tok = f"<extra_id_{total_masked_spans-len(mask_lengths)}>"
             target_sent = mask_tok + "".join(input_sent[ind:ind + length]) + target_sent
             input_sent[ind:ind + length] = [mask_tok] * len(input_sent[ind:ind + length])
 
