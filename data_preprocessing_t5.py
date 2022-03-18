@@ -73,14 +73,21 @@ def main(arg=None):
         
         random.shuffle(mask_candidates)
         which_idx_to_mask = []
-        for m in mask_candidates:
-            for e in which_idx_to_mask:
-                if abs(e-m) <= 30:
-                    break
-            else:
-                which_idx_to_mask.append(m)
-                if len(which_idx_to_mask) == total_masked_spans:
-                    break
+        if total_masked_spans: 
+            for m in mask_candidates:
+                for e in which_idx_to_mask:
+                    if abs(e-m) <= 30:
+                        break
+                else:
+                    which_idx_to_mask.append(m)
+                    if len(which_idx_to_mask) == total_masked_spans:
+                        break
+        else:
+            examples['input_sent'] = None
+            examples['target_sent'] = None
+            examples['mask_length']= None
+            examples['mask_ratio']= None
+            return examples
         which_idx_to_mask = sorted(which_idx_to_mask, reverse = True)
         current_masked_tokens = 0
         ind = 0
@@ -122,9 +129,11 @@ def main(arg=None):
         return examples
 
     dataset = dataset.map(noisy, num_proc=input_arg['worker'])
-    print(f"truth length: {np.mean(dataset['data']['mask_length'])}")
-    print(f"truth ratio: {np.mean(dataset['data']['mask_ratio'])}")
-    dataset['data'].to_csv(f'{input_arg["output_name"]}', columns=['input_sent', 'target_sent'], header=False,
+    print(f"truth length: {np.mean([x for x in dataset['data']['mask_length'] if x is not None])}")
+    print(f"truth ratio: {np.mean([x for x in dataset['data']['mask_ratio']if x is not None])}")
+    df = dataset['data'].to_pandas()
+    df.dropna(axis = 0, how = 'any', inplace = True) # drop samples with no masking (too short)
+    df.to_csv(f'{input_arg["output_name"]}', columns=['input_sent', 'target_sent'], header=False,
                            index=False)
 
 
