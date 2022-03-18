@@ -2,7 +2,7 @@
 # -*- mode: gitignore; -*-
 
 ./example/en.train_filtered.phn
-./example/en.train_filtered.phn
+./example/en.train_filtered2.phn
 ./example/librispeech_lm_corpus_raw_without_librivox.txt.norm.unique_filtered.phn
 ./example/librispeech_lm_corpus_raw_without_librivox.txt.norm.unique_filtered2.phn
 ./example/librispeechlm1.csv
