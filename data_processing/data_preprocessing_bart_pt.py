@@ -1,18 +1,21 @@
 import argparse
-import sys
-
-from datasets import load_dataset
-from itertools import groupby
 import random
+import sys
+from itertools import groupby
+
 import numpy as np
+from datasets import load_dataset
 
 import telephone
+from telephone import Telephonemizer
+
+telephonemizer = Telephonemizer(load_audio_model=False)
 
 
 def parse_args(args):
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, required=True, help="train data")
-    parser.add_argument("--mask_tok", type=str, required=True, help="train data")
+    parser.add_argument("--mask_tok", type=str, required=True, help="mask token")
     parser.add_argument("--output_name", type=str, default="bart_pretrain_data")
     parser.add_argument("--mask_prob", default=0.06, type=float, help="mask lm probability")
     parser.add_argument("--worker", default=10, type=int, help="multi processing worker")
@@ -61,41 +64,38 @@ def main(arg=None):
     print(f"expectations ratio: {np.mean(mask_ratio)}")
 
     def noisy(examples):
-        try:
-            target_sent = examples['text'].replace(" ", "").replace("ˈ", "").replace("ˌ", "").strip()
-            input_sent = examples['text'].replace(" ", "").replace("ˈ", "").replace("ˌ", "").strip()
-            input_sent = list(input_sent)
-            ind = 0
-            mask_lengths = []
-            while True:
-                if ind >= len(input_sent):
-                    break
-                word = input_sent[ind]
-                prob = random.random()
-                if prob <= input_arg['mask_prob'] and len(word) > 0:
-                    length = np.random.poisson(lam=input_arg['poisson_lam'])
-                    mask_lengths.append(length)
-                    if length == 0:
-                        input_sent.insert(ind, MASKTOK)
-                        ind += 1
-                    else:
-                        input_sent[ind:ind + length] = [MASKTOK] * len(input_sent[ind:ind + length])
-                        ind += length
-                else:
+        target_sent = examples['text'].strip()
+        input_sent = telephonemizer.convert_text(
+            examples['text'].replace(" ", "").replace("ˈ", "").replace("ˌ", "").strip())
+        input_sent = list(input_sent)
+        ind = 0
+        mask_lengths = []
+        while True:
+            if ind >= len(input_sent):
+                break
+            word = input_sent[ind]
+            prob = random.random()
+            if prob <= input_arg['mask_prob'] and len(word) > 0:
+                length = np.random.poisson(lam=input_arg['poisson_lam'])
+                mask_lengths.append(length)
+                if length == 0:
+                    input_sent.insert(ind, MASKTOK)
                     ind += 1
-                if ind >= len(input_sent):
-                    break
-            input_sent = "".join([k for k, _ in groupby(input_sent)])  # merge_repeat
-            for p, w in telephone._phn2word_mapping_table.items():
-                input_sent = input_sent.replace(p, w).replace(MASKTOK_PHONE, MASKTOK)
-                target_sent = target_sent.replace(p, w).replace(MASKTOK_PHONE, MASKTOK)
-            examples['input_sent'] = input_sent
-            examples['target_sent'] = target_sent
-            examples['mask_length'] = np.mean(mask_lengths) if len(mask_lengths) > 0 else 0.0
-            examples['mask_ratio'] = ((np.sum(mask_lengths) if len(mask_lengths) > 0 else 0) / len(target_sent)) if len(
-                target_sent) else 0
-        except:
-            pass
+                else:
+                    input_sent[ind:ind + length] = [MASKTOK] * len(input_sent[ind:ind + length])
+                    ind += length
+            else:
+                ind += 1
+            if ind >= len(input_sent):
+                break
+        input_sent = "".join([k for k, _ in groupby(input_sent)])  # merge_repeat
+        for p, w in telephone._phn2word_mapping_table.items():
+            input_sent = input_sent.replace(p, w).replace(MASKTOK_PHONE, MASKTOK)
+        examples['input_sent'] = input_sent
+        examples['target_sent'] = target_sent
+        examples['mask_length'] = np.mean(mask_lengths) if len(mask_lengths) > 0 else 0.0
+        examples['mask_ratio'] = ((np.sum(mask_lengths) if len(mask_lengths) > 0 else 0) / len(target_sent)) if len(
+            target_sent) else 0
         return examples
 
     dataset = dataset.map(noisy, num_proc=input_arg['worker'])
