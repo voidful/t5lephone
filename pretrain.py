@@ -7,19 +7,22 @@ import wandb
 from accelerate import Accelerator
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
-from transformers import ByT5Tokenizer, LongT5ForConditionalGeneration
+from transformers import ByT5Tokenizer, AutoModelForSeq2SeqLM, T5ForConditionalGeneration, \
+    LongT5ForConditionalGeneration
 
 wandb.init(project="t5lephone")
 
 # ======================== Parameter ========================
 input_csv = "data/en.train_filtered1.csv"
+tokenizer_config = "google/byt5-base"
+model_config = "google/byt5-base"
 max_source_length = 1024
 max_target_length = 200
 lr = 3e-4
 batch = 2
 train_epoch = 20
 grad_accum = 64
-save_dir = "./longt5_models"
+save_dir = "./byt5_base"
 
 
 # ======================== Parameter ========================
@@ -72,9 +75,15 @@ losses = []
 data = TextDataset()
 loader = DataLoader(data, batch_size=batch)
 accelerator = Accelerator(log_with='wandb')
-tokenizer = ByT5Tokenizer.from_pretrained("google/byt5-small")
-# model = AutoModelForConditionalGeneration.from_pretrained("google/byt5-small")
-model = LongT5ForConditionalGeneration.from_pretrained("google/long-t5-local-base")
+tokenizer = ByT5Tokenizer.from_pretrained(tokenizer_config)
+
+if 'byt5' in model_config:
+    model = T5ForConditionalGeneration.from_pretrained(model_config)
+elif 'longt5' in model_config:
+    model = LongT5ForConditionalGeneration.from_pretrained(model_config)
+else:
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_config)
+
 optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
 model, optimizer, loader = accelerator.prepare(model, optimizer, loader)
 for i in range(train_epoch):
