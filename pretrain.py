@@ -94,7 +94,8 @@ for i in range(train_epoch):
             "labels"].squeeze(1)
 
         loss = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels).loss
-        losses.append(loss.item())
+        if accelerator.is_main_process:
+            losses.append(loss.item())
         accelerator.backward(loss)
 
         # break
@@ -120,4 +121,4 @@ for i in range(train_epoch):
                     nlp2.write_json({'avg_tail32_loss': avg_tail32_loss, 'step': steps, 'best_loss': best_loss, 'lr': lr},
                                     os.path.join(save_dir,str(steps // grad_accum), "detail.json"))
                     print("best, saving model")
-            losses = losses[-32:]
+                losses = losses[-32:]
