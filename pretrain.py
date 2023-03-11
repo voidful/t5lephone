@@ -103,7 +103,7 @@ for i in range(train_epoch):
             optimizer.step()
             optimizer.zero_grad()
         if steps % grad_accum == grad_accum - 1:
-            avg_tail32_loss = sum(losses[:32]) / len(losses[:32])
+            avg_tail32_loss = sum(losses[-32:]) / len(losses[-32:])
             print("avg_tail32_loss:", avg_tail32_loss)
             wandb.log({'avg_tail32_loss': avg_tail32_loss, 'step': steps})
             if avg_tail32_loss < best_loss:
@@ -120,4 +120,4 @@ for i in range(train_epoch):
                     nlp2.write_json({'avg_tail32_loss': avg_tail32_loss, 'step': steps, 'best_loss': best_loss, 'lr': lr},
                                     os.path.join(save_dir,str(steps // grad_accum), "detail.json"))
                     print("best, saving model")
-            losses = []
+            losses = losses[-32:]
