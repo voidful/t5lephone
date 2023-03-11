@@ -70,6 +70,8 @@ class TextDataset(Dataset):
 
 steps = 0
 best_loss = 1000000
+avg_tail32_loss = 1000000
+save_steps = 100
 losses = []
 
 data = TextDataset()
@@ -101,19 +103,21 @@ for i in range(train_epoch):
             optimizer.step()
             optimizer.zero_grad()
         if steps % grad_accum == grad_accum - 1:
-            avg_loss = sum(losses) / len(losses)
-            print("avg_loss:", avg_loss)
-            wandb.log({'avg_loss': avg_loss, 'step': steps})
-            if avg_loss < best_loss:
-                best_loss = avg_loss
+            avg_tail32_loss = sum(losses[:32]) / len(losses[:32])
+            print("avg_tail32_loss:", avg_tail32_loss)
+            wandb.log({'avg_tail32_loss': avg_tail32_loss, 'step': steps})
+            if avg_tail32_loss < best_loss:
+                best_loss = avg_tail32_loss
+               
+            if (steps // grad_accum) % save_steps == 1: # set to 1 to check saving pipeline early
                 if not os.path.isdir(save_dir):
                     os.makedirs(save_dir)
                 if accelerator.is_main_process:
                     # accelerator.wait_for_everyone()
                     unwrapped_model = accelerator.unwrap_model(model)
-                    unwrapped_model.save_pretrained(save_dir, save_config=True, save_function=accelerator.save,
+                    unwrapped_model.save_pretrained(os.path.join(save_dir,str(steps // grad_accum)), save_config=True, save_function=accelerator.save,
                                                     state_dict=accelerator.get_state_dict(model))
-                    nlp2.write_json({'avg_loss': avg_loss, 'step': steps, 'best_loss': best_loss, 'lr': lr},
-                                    os.path.join(save_dir, "detail.json"))
+                    nlp2.write_json({'avg_tail32_loss': avg_tail32_loss, 'step': steps, 'best_loss': best_loss, 'lr': lr},
+                                    os.path.join(save_dir,str(steps // grad_accum), "detail.json"))
                     print("best, saving model")
             losses = []
